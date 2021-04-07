@@ -107,9 +107,16 @@ module.exports = class Collection {
   $build(data, model) {
     for(let row of data) {
       if (!model) {
-        this.original.push(row);
+        this.original.push(row)
         continue;
       }
+
+      let _model_ = new model();
+      for(let column in _model_.fields) {
+        _model_[column] = row[column]
+      }
+
+      this.original.push(_model_)
     }
   }
 
@@ -237,5 +244,9 @@ module.exports = class Collection {
   last() {
     let len = this.original.length;
     return this.original[len - 1 < 0 ? 0: len - 1];
+  }
+
+  static instance(data, model) {
+    return new Collection(data, model)
   }
 }

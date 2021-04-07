@@ -19,6 +19,8 @@ declare class Collection {
   orderBy(column: string, type: orderby): Collection;
   first(): Model;
   last(): Model;
+
+  static instance(data: any[], model?: Model): Collection;
 }
 
 export = Collection

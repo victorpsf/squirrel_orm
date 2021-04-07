@@ -5,6 +5,7 @@ import Builder from './Builder'
 import OrderByArgument from './interface/orderbyargument'
 import BaseWhere from './interface/basewhere'
 import WhereArgument from './interface/whereArguments'
+import JoinArgument from './interface/joinargument'
 
 declare namespace Prototype {
 
@@ -12,10 +13,12 @@ declare namespace Prototype {
 
 declare class Prototype extends Builder {
   toJSON(): object;
+  select(arg: string[][]): Model;
   select(arg: string[]): Model;
   orderBy(arg: OrderByArgument): Model;
   whereNotNull(arg: BaseWhere): Model;
   where(arg: WhereArgument): Model;
+  join(arg: JoinArgument): Model;
   find(id: number): Promise<Model>;
   get(): Promise<Collection>;
   delete(): Promise<boolean>;

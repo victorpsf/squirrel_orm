@@ -1,4 +1,4 @@
-import Config from './interface/config'
+import { ConnectionOptions } from 'mysql2/typings/mysql'
 import Static from './Static'
 
 
@@ -6,7 +6,7 @@ declare namespace Model {
 }
 
 declare class Model extends Static {
-  constructor(config: Config);
+  constructor(config: ConnectionOptions);
 
   static instance(): Model;
 }

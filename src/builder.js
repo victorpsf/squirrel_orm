@@ -5,6 +5,7 @@ module.exports = class Builder extends Connector {
   whereFields  = []
   whereGroupBy = ""
   whereOrderBy = ""
+  joinFields   = []
   insertFields = []
   insertValues = []
   updateFields = []
@@ -53,19 +54,51 @@ module.exports = class Builder extends Connector {
   }
 
   /**
+   * @param {*} value 
+   * @param {*} index 
+   * @param {*} array 
+   * 
+   * retorno da query
+   * 
+   * @returns 
+   */
+  mapSetSelect(value, index, array) {
+    if (this.isString(value)) {
+      return value.split('.').map((...args) => this.mapSplitAsValue.apply(this, args)).join('.')
+    } else if (this.isArray(value)) {
+      return this.mapSplitSelectArray(value, index, array).join(' as ')
+    } else {
+      return
+    }
+  }
+
+  /**
+   * @param {*} value 
+   * @param {*} index 
+   * @param {*} array 
+   * 
+   * 
+   * @returns 
+   */
+  mapSplitAsValue(value, index, array) {
+    if (value == '*') return value
+
+    return this.mapSplitField(value)
+  }
+
+  /**
    * @param {*} arg 
    * 
    * retorna select formatado para filtro
    * 
    * @returns 
    */
-  mapSplitSelectArray(arg = ['', '']) {
-    let first  = arg[0] 
+  mapSplitSelectArray(arg) {
+    let first  = arg[0]
     let second = arg[1]
 
-    first = first.split('.').map(this.mapSplitField).join('.')
-    second = this.mapSplitField(second)
-
+    first  = first.split('.').map(this.mapSplitField).join('.')
+    second = second.split('.').map((...args) => this.mapSplitAsValue.apply(this, args)).join('.')
     return [first, second]
   }
 
@@ -100,15 +133,6 @@ module.exports = class Builder extends Connector {
 
   /**
    * @param {*} value 
-   * 
-   * remove caso esteja vazio
-   */
-  filterSelect(value) {
-    return !!value
-  }
-
-  /**
-   * @param {*} value 
    * @param {*} index 
    * @param {*} array 
    * 
@@ -124,16 +148,28 @@ module.exports = class Builder extends Connector {
   }
 
   /**
-   * @param {*} args 
+   * @param {*} value 
+   * @param {*} index 
+   * @param {*} array 
    * 
-   * adiciona valores ao selectFields
-   * 
-   * @returns 
    */
-  setSelect(...args) {
-    if (this.emptyArray(args)) return
+  mapJoinQuery(value, index, array) {
+    for(let key in value) value[key] = this.mapSplitField(value[key])
 
-    this.selectFields = this.selectFields.concat(args)
+    const { table, tableTarget, tableField, targetField } = value
+    let _table_  = [table, tableField].join('.')
+    let _target_ = [tableTarget, targetField].join('.')
+
+    return `INNER JOIN ${tableTarget} ON ${_target_} = ${_table_}`;
+  }
+
+  /**
+   * @param {*} value 
+   * 
+   * remove caso esteja vazio
+   */
+  filterSelect(value) {
+    return !!value
   }
 
   /**
@@ -144,27 +180,26 @@ module.exports = class Builder extends Connector {
   }
 
   /**
+   * @param {*} args 
+   * 
+   * adiciona valores ao selectFields
+   * 
+   * @returns 
+   */
+  setSelect(...args) {
+    if (this.emptyArray(args)) return
+
+    this.selectFields = this.selectFields.concat(args)
+    return this
+  }
+
+  /**
    * retorna campos para seleção
    * 
    * @returns String
    */
   getSelect() {
-    let selectValues = []
-
-    for(let select of this.selectFields) {
-      if (this.isString(select)) {
-        selectValues.push(
-          select.split('.').map(this.mapSplitField).join('.')
-        )
-        continue
-      }
-      if (this.isArray(select)) {
-        selectValues.push(
-          this.mapSplitSelectArray(select).join(' as ')
-        )
-        continue
-      }
-    }
+    let selectValues = this.selectFields.map((value, index, array) => this.mapSetSelect(value, index, array)).filter(this.filterSelect)
 
     this.unsetSelect()
     selectValues = (selectValues.join(', ')) || '*'
@@ -186,6 +221,7 @@ module.exports = class Builder extends Connector {
   setWhere(arg = { column: '', comparison: '', value: '' }) { 
     if (this.isUndefined(arg.comparison)) arg.comparison = '='
     this.whereFields.push(arg)
+    return this
   }
 
   /**
@@ -207,7 +243,7 @@ module.exports = class Builder extends Connector {
 
     this.unsetWhere()
     whereQuery = whereQuery.join(' AND ')
-    return whereQuery ? '(' + whereQuery + ')': whereQuery
+    return whereQuery ? '(' + whereQuery + ')': null
   }
 
   /**
@@ -227,6 +263,7 @@ module.exports = class Builder extends Connector {
 
     column = column.split('.').map(this.mapSplitField).join('.')
     this.whereOrderBy = `ORDER BY ${column} ${order}`
+    return this
   }
 
   /**
@@ -237,7 +274,7 @@ module.exports = class Builder extends Connector {
   getOrderBy() {
     let orderby = this.whereOrderBy.substr(0)    
     this.unsetOrderBy()
-    return orderby ? ` ${orderby} ` : orderby
+    return orderby ? ` ${orderby} ` : null
   }
 
   /**
@@ -271,6 +308,7 @@ module.exports = class Builder extends Connector {
 
       this.insertFields = keys
     }
+    return this
   }
 
   /**
@@ -304,13 +342,14 @@ module.exports = class Builder extends Connector {
   setInsertValues(args = []) {
     if (this.isObject(args)) {
       let value = []
-      for(let key in this.insertFields) {
+
+      for(let key of this.insertFields) {
         let _value_ = this.usingCast(key, args[key])
         value.push(this.getMysqlValue(_value_))
       }
 
       this.insertValues = [value.join(', ')]
-      return
+      return this
     }
     if (this.isArray(args)) {
       let values = []
@@ -328,7 +367,7 @@ module.exports = class Builder extends Connector {
       }
 
       this.insertValues = values
-      return
+      return this
     }
   }
 
@@ -364,6 +403,7 @@ module.exports = class Builder extends Connector {
 
       this.updateFields.push(`${column} = ${value}`)
     }
+    return this
   }
 
   /**
@@ -389,6 +429,37 @@ module.exports = class Builder extends Connector {
       if (this.isNullOrUndefined(value)) throw new Error(`Builder buildUpdate setUpdateWhere: primary column ${column} don't contain value`)
       this.setWhere({ column, value })
     }
+    return this
+  }
+
+  /**
+   * limpa campos de join
+   */
+  unsetJoin() {
+    this.joinFields = [];
+  }
+
+  /**
+   * @param {table,tableTarget,tableField,targetField} arg 
+   * 
+   * adiciona filtro join
+   */
+  setJoin(arg = { table: '', tableTarget: '', tableField: '', targetField: '' }) {
+    for(let key in arg) if (this.isArray(arg[key])) throw new Error(`Builder setJoin: value in ${key} is array, if you want to add a filter add them to function select`)
+    this.joinFields.push(arg)
+    return this
+  }
+
+  /**
+   * obtem join com tabelas
+   * 
+   * @returns string
+   */
+  getJoin() {
+    let joinFields = this.joinFields.map((...args) => this.mapJoinQuery.apply(this, args)).join(' ');
+
+    this.unsetJoin()
+    return joinFields
   }
 
   /**
@@ -436,12 +507,19 @@ module.exports = class Builder extends Connector {
    */
   buildSelect() {
     let table = this.table.split('.').map(this.mapSplitField).join('.')
-    let complement = [
-      this.getWhere(),
-      this.getOrderBy()
-    ].filter(this.filterSelect).map(this.mapSelectComplement).join(' ')
+    
+    let complements = {
+      where: this.getWhere(),
+      order: this.getOrderBy(),
+      join: this.getJoin()
+    }
+    let complement = []
 
-    return `SELECT ${this.getSelect()} from ${table} ${complement};`
+    if (complements.join)  complement.push(complements.join)
+    if (complements.where) complement.push(`WHERE ${complements.where}`)
+    if (complements.order) complement.push(complements.order)
+
+    return `SELECT ${this.getSelect()} from ${table} ${complement.join(' ')};`
   }
 
   /**
@@ -478,5 +556,50 @@ module.exports = class Builder extends Connector {
 
 
     return `UPDATE ${table} ${complement};`
+  }
+
+  /**
+   * @param {*} param0 
+   * 
+   * retorna id do ExecuteQuery
+   * 
+   * @returns Number
+   */
+  getResultHeaderId({ insertId = null }) {
+    return insertId
+  }
+
+  /**
+   * @param {model, json} param0 
+   *
+   * adiciona valores no model
+   * 
+   * @returns model
+   */
+  setJSONPropertiesModel({ model, json }) {
+    for(let field in model.fields) {
+      model.setProperties(field, json[field] || null)
+    }
+    
+    return model
+  }
+
+  /**
+   * @param {*} results 
+   * @param {*} json 
+   * @param {*} model 
+   * 
+   * inicializa novo model apartir do retorno do ExecuteQuery
+   * 
+   * @returns model
+   */
+  setValuesInModel(results, json, model) {
+    return this.setJSONPropertiesModel({
+      model: new model(),
+      json: {
+        ...json,
+        id: this.getResultHeaderId(results)
+      }
+    })
   }
 }

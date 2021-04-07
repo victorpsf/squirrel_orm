@@ -25,4 +25,8 @@ module.exports = class Properties extends Util {
   getConfig() {
     return this.configs
   }
+
+  setProperties(key, value) {
+    this[key] = value
+  }
 }

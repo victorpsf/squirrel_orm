@@ -6,7 +6,7 @@ module.exports = class Prototype extends Builder {
   toJSON() {
     let json = {}
 
-    for(let field of this.fields)
+    for(let field in this.fields)
       if (this[field] !== undefined) json[field] = this[field]
 
     return json
@@ -22,11 +22,6 @@ module.exports = class Prototype extends Builder {
     return this
   }
 
-  // groupBy(field) {
-  //   this.builder.group(field)
-  //   return this
-  // }
-
   whereNotNull(arg = { column: '' }) {
     this.setWhere({ column: arg.column, comparison: 'is not', value: null })
     return this
@@ -34,6 +29,11 @@ module.exports = class Prototype extends Builder {
 
   where(arg = { column: '', comparison: '', value: '' }) {
     this.setWhere(arg)
+    return this
+  }
+
+  join(arg = { table: '', tableTarget: '', tableField: '', targetField: '' }) {
+    this.setJoin(arg)
     return this
   }
 
