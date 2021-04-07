@@ -63,33 +63,11 @@ module.exports = class Connector extends Properties {
   /**
    * @param {*} args 
    * 
-   * execução de querys INSERT
+   * execução de querys INSERT, DELETE, UPDATE
    * 
    * @returns 
    */
   ExecuteQuery(args = { query: '' }) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        if (!this.client) await this.open()
-        this.client.execute(args.query, async (error, data) => {
-          await this.close()
-          if (error) return reject(error)
-          return resolve(data)
-        })
-      } catch (error) {
-        return reject(error)
-      }
-    })
-  }
-
-  /**
-   * @param {*} args 
-   * 
-   * execução de querys DELETE, UPDATE
-   * 
-   * @returns 
-   */
-  ExecuteQueryEffect(args = { query: '' }) {
     return new Promise(async (resolve, reject) => {
       try {
         if (!this.client) await this.open()

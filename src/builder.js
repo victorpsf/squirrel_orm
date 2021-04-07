@@ -2,12 +2,13 @@ const Connector = require('./connector')
 
 module.exports = class Builder extends Connector {
   selectFields = []
-  whereFields = []
+  whereFields  = []
   whereGroupBy = ""
   whereOrderBy = ""
   insertFields = []
   insertValues = []
-  builderCast = {}
+  updateFields = []
+  builderCast  = {}
 
   constructor() { super() }
 
@@ -77,6 +78,24 @@ module.exports = class Builder extends Connector {
    */
   mapInsertValue(value = '') {
     return `( ${value} )`
+  }
+
+  /**
+   * @param {*} query 
+   * @param {*} index 
+   * @param {*} array 
+   * 
+   * @returns
+   */
+  mapUpdateComplement(query, index, array) {
+    switch (index) {
+      case 0:
+        return query
+      case 1:
+        return ` WHERE ${query}`
+      default:
+        return query
+    }
   }
 
   /**
@@ -325,6 +344,76 @@ module.exports = class Builder extends Connector {
   }
 
   /**
+   * limpa campos de atualização updateFields
+   */
+  unsetUpdate() {
+    this.updateFields = []
+  }
+
+  /**
+   * @param {column,value} arg 
+   * 
+   * adiciona campo para atualização
+   */
+  setUpdate(arg = []) {
+    for(let column of arg) {
+      let value = this[column]
+      value = this.usingCast(column, value)
+      value = this.getMysqlValue(value)
+      column = column.split('.').map(this.mapSplitField).join('.')
+
+      this.updateFields.push(`${column} = ${value}`)
+    }
+  }
+
+  /**
+   * retorna campos para tualização
+   * 
+   * @returns string
+   */
+  getUpdate() {
+    let query = this.updateFields.join(', ')
+    this.unsetUpdate()
+    return query
+  }
+
+  /**
+   * @param {*} arg 
+   * 
+   * adiciona where nos campos de tipo primario
+   */
+  setUpdateWhere(arg = []) {
+    for(let column of arg) {
+      let value = this[column]
+
+      if (this.isNullOrUndefined(value)) throw new Error(`Builder buildUpdate setUpdateWhere: primary column ${column} don't contain value`)
+      this.setWhere({ column, value })
+    }
+  }
+
+  /**
+   * retorna colunas da tabela
+   * 
+   * @returns {primary,other}
+   */
+  getColumns() {
+    let primary = []
+    let other   = []
+
+    for(let key in this.fields) {
+      let config = this.fields[key]
+
+      if (config.primaryKey) primary.push(key)
+      else                   other.push(key)
+    }
+
+    return {
+      primary,
+      other
+    }
+  }
+
+  /**
    * @param {*} value 
    * 
    * obtem query de insert
@@ -355,5 +444,39 @@ module.exports = class Builder extends Connector {
     return `SELECT ${this.getSelect()} from ${table} ${complement};`
   }
 
-  
+  /**
+   * obtem query de delete com filtro para não remover todos os dados
+   * 
+   * @returns String
+   */
+  buildDelete() {
+    let table = this.table.split('.').map(this.mapSplitField).join('.')
+    let complement = [
+      this.getWhere()
+    ].filter(this.filterSelect).map(this.mapSelectComplement).join('')
+
+    if (!complement.length) throw new Error('Builder buildDelete: query is not contain where clousure')
+
+    return `DELETE FROM ${table} ${complement};`
+  }
+
+  /**
+   * @returns String
+   */
+  buildUpdate() {
+    let table = this.table.split('.').map(this.mapSplitField).join('.')
+    let { primary, other } = this.getColumns()
+
+    if (this.emptyArray(primary)) throw new Error('Builder buildUpdate: primary key is not defined in fields')
+    this.setUpdate(other)
+    this.setUpdateWhere(primary)
+
+    let complement = [
+      this.getUpdate(),
+      this.getWhere()
+    ].map(this.mapUpdateComplement).join(' ')
+
+
+    return `UPDATE ${table} ${complement};`
+  }
 }

@@ -40,8 +40,8 @@ module.exports = class Prototype extends Builder {
   async find(id) {
     this.setWhere({ column: 'id', value: id })
 
-    let MySqlReader = await this.get()
-    return MySqlReader.first()
+    let collection = await this.get()
+    return collection.first()
   }
 
   get() {
@@ -55,24 +55,21 @@ module.exports = class Prototype extends Builder {
   }
 
   async delete() {
-    if (!this.id) return false
+    if (this.isNullOrUndefined(this.id)) return false
 
-    this.where({ column: 'id', value: this.id })
-    // let query = this.builder.buildDelete(this.table)
+    this.setWhere({ column: 'id', value: this.id });
+    let query = this.buildDelete(this.table)
 
-    // await this.connector.ExecuteNonQueryDeleteOrUpdate({
-    //   query
-    // })
-    return true
+    await this.ExecuteQuery({
+      query
+    })
+    return true;
   }
 
   async save() {
-    this.builder.usingCast(this.cast, this)
-    // let query = this.builder.buildUpdateModel(this)
+    let query = this.buildUpdate();
 
-    // await this.connector.ExecuteNonQueryDeleteOrUpdate({
-    //   query
-    // })
+    await this.ExecuteQuery({ query })
   }
 
   async belongsTo(field, model) {
