@@ -12,6 +12,15 @@ module.exports = class Prototype extends Builder {
     return json
   }
 
+  async insertJSON({ query, json }) {
+    let result = await this.ExecuteQuery({ query })
+
+    if (!json)
+      return this.getResultHeaderId(result)
+
+    return this.setValuesInModel(result,json, this);
+  }
+
   select(...args) {
     this.setSelect.apply(this, args)
     return this
@@ -72,13 +81,20 @@ module.exports = class Prototype extends Builder {
     await this.ExecuteQuery({ query })
   }
 
-  async belongsTo(field, model) {
-    // try {
-    //   return await model.find(this[field])
-    // } catch (error) { return undefined }
+  belongsTo(field, model) {
+    try {
+      return model.find(this[field]);
+    } catch (error) { return undefined; }
   }
 
-  async hasMany(field, model) {
+  hasMany(field, model) {
+    try {
+      let { primary } = this.getColumns();
 
+      for(let primary_key of primary)
+        model = model.where({ column: field, value: this[primary_key] });
+
+      return model.get();
+    } catch (error) { return undefined }
   }
 }

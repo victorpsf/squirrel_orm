@@ -95,7 +95,7 @@ module.exports = class Collection {
    * @param {*} model is constructor class
    */
   constructor(data, model) {
-    this.$build(data, model);
+    this.build(data, model);
   }
 
   /**
@@ -104,7 +104,7 @@ module.exports = class Collection {
    * 
    * construir Collection
    */
-  $build(data, model) {
+  build(data, model) {
     for(let row of data) {
       if (!model) {
         this.original.push(row)
@@ -112,9 +112,8 @@ module.exports = class Collection {
       }
 
       let _model_ = new model();
-      for(let column in _model_.fields) {
-        _model_[column] = row[column]
-      }
+      for(let column in row)
+        _model_.setProperties(column, row[column])
 
       this.original.push(_model_)
     }

@@ -63,46 +63,26 @@ module.exports = class Static extends Prototype {
     let model = new this();
     
     if (!model.isObject(json)) throw new Error('Squirrel-ORM static save: argument is not json type.');
-    let query = model.buildInsert(json);
-    let result= await model.ExecuteQuery({ query });
 
-    return model.getResultHeaderId(result);
+    return await model.insertJSON({ query: model.buildInsert(json) });
   }
 
   static async create(arg) {
     let model = new this();
-    let result = null;
-    let query = null;
     
     if (model.isArray(arg)) {
-      let arrayVerify = {
-        bool: false,
-        index: []
-      };
+      let promises = []
 
-      for(let index in arg) {
-        if (!model.isObject(arg[index])) {
-          arrayVerify.bool = true;
-          arrayVerify.index.push(index);
-        }
-        continue
-      }
+      for(let row of arg) 
+        if (model.isObject(row)) promises.push(
+          model.insertJSON({ query: model.buildInsert(row) , json: row })
+        )
 
-      if (arrayVerify.bool) throw new Error(`Squirrel-ORM static save: values in array is not json type.\nIndex: [${arrayVerify.index.join(',')}]`);
-
-      let values = [];
-      
-      for(let row of arg) {
-        values.push(this.create(row));
-      }
-
-      values = await Promise.all(values);
-      return model.collection.instance(values);
+      let values = await Promise.all(promises);
+      return model.collection.instance(values)
     }
     else if (model.isObject(arg)) {
-      query = model.buildInsert(arg);
-      result = await model.ExecuteQuery({ query });
-      return model.setValuesInModel(result, arg, this);
+      return model.insertJSON({ query: model.buildInsert(arg), json: arg });
     }
   }
 }
