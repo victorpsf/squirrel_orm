@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/Victorpsf/squirrel_orm/issues"
   },
-  "homepage": "https://github.com/Victorpsf/squirrel_orm#readme"
+  "homepage": "https://github.com/Victorpsf/squirrel_orm#readme",
+  "devDependencies": {
+    "mysql2": "^2.2.5"
+  }
 }

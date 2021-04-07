@@ -6,6 +6,8 @@ declare interface DATA_TYPES {
   DATE_TIME: number;
   TIME: number;
   FLOAT: number;
+  JSON: number;
+  ARRAY: number;
 }
 
 export = DATA_TYPES

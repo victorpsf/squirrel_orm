@@ -11,7 +11,7 @@ declare namespace Connector {
 }
 
 declare class Connector extends Properties {
-  client?: Connection;
+  connection?: Connection;
 
   createConnection(): Connection;
   open(): Promise<void>;

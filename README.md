@@ -1,53 +1,101 @@
-# Simples ORM baseado em orientação a objeto
+# Squirrel_orm é um simples ORM feito com orientação a objeto
 
-Sim, você não leu errado, orientação a objeto.
+Aqui vou abordar as informações para utilização da biblioteca.
 
-Deixei aberto no npm para caso alguém queira aproveitar o pacote.
-Pode realizar cópia do pacote tranquilamente é bom que evoluimos.
+## Conteudo
 
-Uma simples demonstração de uso
+- [Primeiro passo é a instalação](#primeiro-passo-é-a-instalação)
+- [Definição do BaseModel](#definição-do-BaseModel)
+- [Definição do model](#definição-do-model)
+- [Definição da tabela](#definição-da-tabela)
+- [Definição dos fields](#definição-dos-fields)
+- [definição da relation](#definição-da-relation)
 
-<pre>
-$ npm install --save squirrel_orm mysql2
-</pre>
+### Primeiro passo é a instalação
 
+``` bash 
+$ npm install --save mysql2 squirrel_orm
+```
+obs: a biblioteca usa o <a href="https://www.npmjs.com/package/mysql2">mysql2</a> é uma dependência de utilização
 
-## Configuração
+### Definição do BaseModel
 
-Crie uma class e coloque o nome que quiser, eu aconselho a colocar BaseModel
-
-dentro dele você pode colocar a configuração de acesso ao servidor.
-
+O base model é importante para que você não precise ficar adicinando a configuração de conexão em todos os modelos que você vier a criar.
 
 ``` js
 const { Model } = require('squirrel_orm');
 
 module.exports = class BaseModel extends Model {
-  constructor() {
-    // da suporte as configurações do mysql2
+  constructor() { 
+    // tem suporte as configurações do mysql2
+    // pois as opções passadas aqui são utilizadas para criação
+    // da conexão
     super({
       host: 'localhost',
       port: 3306,
       user: 'root',
       password: '',
-      database: ''
-    });
+      database: 'teste'
+    })
   }
 }
 ```
 
-Vale salientar que não recomendo a utilização do usuário root, o exemplo é para fim de exemplo apenas.
+### Definição do model
 
-## criação do model
+A definição do model é bastante simples, segue uma pequena lógica.
+
+- table    - tabela a qual vai ser acessado
+- fields   - definição dos campos(colunas) da tabela
+- relation - você deve colocar o nome da classe a qual se faz referência e o mode dela
+- cast     - conversão de tipos, por exemplo: array ou json
+
+#### Definição da tabela
 ``` js
 const BaseModel = require('./BaseModel');
 
-module.exports = class Client extends BaseModel {
-  table = 'cliente';
+module.exports = class User extends BaseModel {
+  table = 'user';
 
-  // esses fields são para lembrar das configurações do banco de dados
-  // ainda não tem utilidade real dentro do código
-  // ainda falta implementar
+  constructor() { super() }
+}
+```
+
+#### Definição dos fields
+
+``` js
+// exemplo
+const BaseModel = require('./BaseModel');
+
+module.exports = class User extends BaseModel {
+  table = 'user';
+  fields = {
+    "id": {
+      type: this.DataTypes.INTERGER,
+      auto_increment: true,
+      nullable: true,
+      primary_key: true
+    },
+    "acesso": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "chave": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    }
+  };
+
+  constructor() { super() }
+}
+```
+
+``` js
+// exemplo
+const BaseModel = require('./BaseModel');
+
+module.exports = class Pessoa extends BaseModel {
+  table = 'pessoa';
   fields = {
     "id": {
       type: this.DataTypes.INTERGER,
@@ -59,88 +107,139 @@ module.exports = class Client extends BaseModel {
       type: this.DataTypes.STRING,
       nullable: false
     },
-    "cpf": {
-      type: this.DataTypes.STRING,
-      nullable: false
-    }
-    ,
     "email": {
       type: this.DataTypes.STRING,
       nullable: false
     },
-    "telefone": {
+    "user_id": {
+      type: this.DataTypes.INTERGER,
+      nullable: false,
+      foreign_key: true
+    }
+  };
+
+  constructor() { super() }
+}
+```
+
+### definição da relation
+``` js
+// exemplo
+const BaseModel = require('./BaseModel');
+
+module.exports = class User extends BaseModel {
+  table = 'user';
+  fields = {
+    "id": {
+      type: this.DataTypes.INTERGER,
+      auto_increment: true,
+      nullable: true,
+      primary_key: true
+    },
+    "acesso": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "chave": {
       type: this.DataTypes.STRING,
       nullable: false
     }
   };
+
+  relation: {
+    pessoa: require('./Pessoa.js')
+  }
+
+  constructor() { super() }
+
+  // retorna promise<Collection>
+  // exemplo de relação onde user é referênciado em pessoa
+  pessoa() {
+    return this.hasMany('user_id', this.relation.pessoa);
+  }
 }
-``` 
-
-## exemplo de uso
-
-### select
-
-``` js
-const Client = require('./Client');
-
-(async () => {
-  let clients = await Client.get(); // retorna Collection
-})();
 ```
 
 ``` js
-const Client = require('./Client');
+// exemplo
+const BaseModel = require('./BaseModel');
 
-(async () => {
-  let clients = await Client.where({ column: 'id', value: 'id' }).get(); // retorna Collection
-})();
+module.exports = class Pessoa extends BaseModel {
+  table = 'pessoa';
+  fields = {
+    "id": {
+      type: this.DataTypes.INTERGER,
+      auto_increment: true,
+      nullable: true,
+      primary_key: true
+    },
+    "nome": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "email": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "user_id": {
+      type: this.DataTypes.INTERGER,
+      nullable: false,
+      foreign_key: true
+    }
+  };
+
+  relation: {
+    user: require('./User.js')
+  }
+
+  constructor() { super() }
+
+  // retorna promise<Model>
+  // exemplo de relação onde pessoa referência user
+  user() {
+    return this.belongsTo('user_id', this.relation.user);
+  }
+}
 ```
 
-``` js
-const Client = require('./Client');
+#### Definição do cast
 
-(async () => {
-  let clients = await Client.find(1); // retorna Model
-})();
+``` js 
+// exemplo
+const BaseModel = require('./BaseModel');
+
+module.exports = class Pessoa extends BaseModel {
+  table = 'pessoa';
+  fields = {
+    "id": {
+      type: this.DataTypes.INTERGER,
+      auto_increment: true,
+      nullable: true,
+      primary_key: true
+    },
+    "nome": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "email": {
+      type: this.DataTypes.STRING,
+      nullable: false
+    },
+    "user_id": {
+      type: this.DataTypes.INTERGER,
+      nullable: false,
+      foreign_key: true
+    },
+    "perfil": {
+      type: this.DataTypes.JSON,
+      nullable: true
+    }
+  };
+
+  cast = {
+    perfil: "json"
+  }
+
+  constructor() { super() }
+}
 ```
-
-``` js
-const Client = require('./Client');
-
-(async () => {
-  let clients = await Client.select('nome').get(); // retorna Collection
-})();
-```
-
-``` js
-const Client = require('./Client');
-
-(async () => {
-  // IGUAL a select `nome` as `nm`
-  // primeiro valor do array é o campo e o segundo é como você quer que ele seja retornado
-  let clients = await Client.select(['nome', 'nm']).get(); // retorna Collection
-})();
-```
-
-``` js
-const Client = require('./Client');
-
-(async () => {
-  // IGUAL a select `nome` as `nm`
-  // primeiro valor do array é o campo e o segundo é como você quer que ele seja retornado
-  let clients = await Client.select('cliente.*').join({
-    // para poder realizar consultas complexas, no contexto que você
-    // pode realiar join com 2 ou mais tabelas
-    table: 'cliente',
-    // tabela referênciada
-    target: 'compras',
-    // campo da tabela
-    tableField: 'id',
-    // campo da tabela referênciada
-    targetField: 'cliente_id'
-  }).where({ column: 'cliente.id', value: 1 })
-    .get(); // retorna Collection
-})();
-```
-
-# prometo colocar mais informações sobre a biblioteca em breve abraços, por enquanto tenho que deixar utilizavel e sem bugs

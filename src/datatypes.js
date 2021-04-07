@@ -5,5 +5,7 @@ module.exports = {
   DATE: 4,
   DATE_TIME: 5,
   TIME: 6,
-  FLOAT: 7
+  FLOAT: 7,
+  JSON: 8,
+  ARRAY: 9
 }

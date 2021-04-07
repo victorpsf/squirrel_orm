@@ -1,6 +1,7 @@
 import Model from './Model'
 import WhereArgument from './interface/whereArguments'
 import orderby from './type/orderby'
+import Cast from './interface/cast'
 
 declare namespace Collection {
 
@@ -9,7 +10,7 @@ declare namespace Collection {
 declare class Collection {
   original: any[];
 
-  constructor(data: any[], model: Model);
+  constructor(data: any[], model?: Model, cast?: Cast);
 
   all(): Model[];
   toArray(): object[];
@@ -20,7 +21,7 @@ declare class Collection {
   first(): Model;
   last(): Model;
 
-  static instance(data: any[], model?: Model): Collection;
+  static instance(data: any[], model?: Model, cast?: Cast): Collection;
 }
 
 export = Collection

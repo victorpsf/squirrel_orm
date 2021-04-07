@@ -47,7 +47,9 @@ module.exports = class Prototype extends Builder {
   }
 
   async find(id) {
-    this.setWhere({ column: 'id', value: id })
+    let { primary } = this.getColumns();
+
+    this.setWhere({ column: primary[0], value: id })
 
     let collection = await this.get()
     return collection.first()
@@ -89,10 +91,11 @@ module.exports = class Prototype extends Builder {
 
   hasMany(field, model) {
     try {
+      model = new model();
       let { primary } = this.getColumns();
 
       for(let primary_key of primary)
-        model = model.where({ column: field, value: this[primary_key] });
+        model.where({ column: field, value: this[primary_key] });
 
       return model.get();
     } catch (error) { return undefined }

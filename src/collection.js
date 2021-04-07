@@ -94,17 +94,29 @@ module.exports = class Collection {
    * @param {*} data  is array data
    * @param {*} model is constructor class
    */
-  constructor(data, model) {
-    this.build(data, model);
+  constructor(data, model, cast) {
+    this.build(data, model, cast);
   }
 
+
+  setCastValue(key, value, cast) {
+    if (!cast || !cast[key]) return value;
+
+    switch (cast[key]) {
+      case 'array':
+      case 'json':
+        return JSON.parse(value);
+      default:
+        return value;
+    }
+  }
   /**
    * @param {*} data 
    * @param {*} model 
    * 
    * construir Collection
    */
-  build(data, model) {
+  build(data, model, cast) {
     for(let row of data) {
       if (!model) {
         this.original.push(row)
@@ -112,8 +124,9 @@ module.exports = class Collection {
       }
 
       let _model_ = new model();
-      for(let column in row)
-        _model_.setProperties(column, row[column])
+      for(let column in row) {
+        _model_.setProperties(column, this.setCastValue(column, row[column], cast));
+      }
 
       this.original.push(_model_)
     }
@@ -245,7 +258,7 @@ module.exports = class Collection {
     return this.original[len - 1 < 0 ? 0: len - 1];
   }
 
-  static instance(data, model) {
-    return new Collection(data, model)
+  static instance(data, model, cast) {
+    return new Collection(data, model, cast)
   }
 }

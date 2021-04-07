@@ -465,23 +465,26 @@ module.exports = class Builder extends Connector {
   /**
    * retorna colunas da tabela
    * 
-   * @returns {primary,other}
+   * @returns {primary: [],other: [],foreign: []}
    */
   getColumns() {
     let primary = []
     let other   = []
+    let foreign = []
 
     for(let key in this.fields) {
       let config = this.fields[key]
 
-      if (config.primaryKey) primary.push(key)
-      else                   other.push(key)
+      if (config.primary_key)      primary.push(key)
+      else if (config.foreign_key) foreign.push(key)
+      else                         other.push(key)
     }
 
     return {
       primary,
-      other
-    }
+      other,
+      foreign
+    };
   }
 
   /**
@@ -543,10 +546,10 @@ module.exports = class Builder extends Connector {
    */
   buildUpdate() {
     let table = this.table.split('.').map(this.mapSplitField).join('.')
-    let { primary, other } = this.getColumns()
+    let { primary, other, foreign } = this.getColumns()
 
     if (this.emptyArray(primary)) throw new Error('Builder buildUpdate: primary key is not defined in fields')
-    this.setUpdate(other)
+    this.setUpdate(other.concat(foreign))
     this.setUpdateWhere(primary)
 
     let complement = [
