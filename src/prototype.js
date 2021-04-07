@@ -18,7 +18,7 @@ module.exports = class Prototype extends Builder {
     if (!json)
       return this.getResultHeaderId(result)
 
-    return this.setValuesInModel(result,json, this);
+    return this.setValuesInModel(result,json, this.constructor);
   }
 
   select(...args) {
