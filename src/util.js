@@ -156,6 +156,11 @@ class Util {
     if (!this.isString(value)) return false
     return /^.+@\w+\.\w{3}$|^.+@\w+\.\w{3}\.\w{2}$/.test(value)
   }
+
+  isFunction(value) {
+    if (this.isNullOrUndefined(value)) return false
+    return typeof value === 'function'
+  }
 }
 
 module.exports = Util

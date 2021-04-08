@@ -21,6 +21,7 @@ declare class Util {
   isObject(value: any): boolean;
   isArray(value: any): boolean;
   isEmail(value: any): boolean;
+  isFunction(value: any): boolean;
 }
 
 export = Util
