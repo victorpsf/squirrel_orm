@@ -91,63 +91,50 @@ class Util {
 
   isDateTime(value) {
     if (this.isNullOrUndefined(value))     return false
-    if (value.constructor.name === 'Date') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (value instanceof Date)             return true
+    if (!this.isString(value))             return false
     return /^\d+\-\d+\-\d+T\d+\:\d+\:\d+\.\d+Z$/.test(value)
   }
 
   isDate(value) {
-    if (this.isNullOrUndefined(value))     return false
-    if (value.constructor.name === 'Date') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (this.isNullOrUndefined(value)) return false
+    if (value instanceof Date)         return true
+    if (!this.isString(value))         return false
     return /^\d+\-\d+\-\d+$/.test(value)
   }
 
   isTime(value) {
-    if (this.isNullOrUndefined(value))     return false
-    if (value.constructor.name === 'Date') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (this.isNullOrUndefined(value)) return false
+    if (value instanceof Date)         return true
+    if (!this.isString(value))         return false
     return /^\d+\:\d+\:\d+$/.test(value)
   }
 
   isBoolean(value) {
     if (this.isNullOrUndefined(value))        return false
     if (value.constructor.name === 'Boolean') return true
-    let isString = this.isString(value)
-
+    if (!this.isString(value))                return false
     return /^true$/.test(value) || /^false$/.test(value)
   }
 
   isNumber(value) {
     if (this.isNullOrUndefined(value))       return false
     if (value.constructor.name === 'Number') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (!this.isString(value))               return false
     return /^((\d+)|(\d+\.\d+))$/.test(value)
   }
 
   isObject(value) {
-    if (this.isNullOrUndefined(value)) return false
-    if (typeof value === 'object' && value.constructor.name !== 'Array') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (this.isNullOrUndefined(value))                        return false
+    if (value instanceof Object && typeof value === 'object') return true
+    if (!this.isString(value))                                return false
     return /^\{.+\}$/.test(value)
   }
 
   isArray(value) {
-    if (this.isNullOrUndefined(value)) return false
-    if (typeof value === 'object' && value.constructor.name === 'Array') return true
-    let isString = this.isString(value)
-
-    if (!isString) return false
+    if (this.isNullOrUndefined(value))                  return false
+    if (value instanceof Array && Array.isArray(value)) return true
+    if (!this.isString(value))                          return false
     return /^\[.+\]$/.test(value)
   }
 
