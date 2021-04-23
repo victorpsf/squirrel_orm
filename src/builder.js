@@ -412,9 +412,10 @@ module.exports = class Builder extends Connector {
    * @returns string
    */
   getUpdate() {
+    if (!this.updateFields.length) throw new Error('Builder getUpdate empty values updated')
     let query = this.updateFields.join(', ')
     this.unsetUpdate()
-    return query
+    return `SET ${query}`
   }
 
   /**
